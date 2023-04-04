@@ -25,6 +25,8 @@ Servo servo_grab;
 
 byte inc_angle = 30;
 
+int cur_drive_angle_l = 90;
+int cur_drive_angle_r = 90;
 int cur_tower_angle_x = 90;
 int cur_tower_angle_y = 90;
 int cur_segment2_angle = 90;
@@ -108,6 +110,9 @@ void do_drive()
     {
         servo_l.write(90);
         servo_r.write(90);
+
+        cur_drive_angle_l = 90;
+        cur_drive_angle_r = 90;
         return;
     }
 
@@ -122,6 +127,14 @@ void do_drive()
 
     servo_l.write(angle_l);
     servo_r.write(angle_r);
+
+    byte _angle_l = (angle_l > cur_drive_angle_l) ? _min(cur_drive_angle_l + inc_angle, angle_l) : _max(cur_drive_angle_l - inc_angle, angle_l);
+    byte _angle_r = (angle_r > cur_drive_angle_r) ? _min(cur_drive_angle_r + inc_angle, angle_r) : _max(cur_drive_angle_r - inc_angle, angle_r);
+
+    write_angle(servo_l, _angle_l, cur_drive_angle_l);
+    write_angle(servo_r, _angle_r, cur_drive_angle_r);
+
+    Serial.printf("_angle_l: %d, _angle_r: %d\n", _angle_l, _angle_r);
 }
 
 void do_tower()
@@ -144,8 +157,8 @@ void do_tower()
     byte y = map(RY, 0, 255, 180, 0); // прямое управление
     byte x = map(RX, 0, 255, 180, 0);
 
-    byte _y = (y > cur_tower_angle_y) ? _min(cur_tower_angle_y + inc_angle, y) : _max(cur_tower_angle_y - 30, y);
-    byte _x = (x > cur_tower_angle_x) ? _min(cur_tower_angle_x + inc_angle, x) : _max(cur_tower_angle_x - 30, x);
+    byte _y = (y > cur_tower_angle_y) ? _min(cur_tower_angle_y + inc_angle, y) : _max(cur_tower_angle_y - inc_angle, y);
+    byte _x = (x > cur_tower_angle_x) ? _min(cur_tower_angle_x + inc_angle, x) : _max(cur_tower_angle_x - inc_angle, x);
 
     write_angle(servo_tower_y, _y, cur_tower_angle_y);
     write_angle(servo_tower_x, _x, cur_tower_angle_x);
@@ -157,13 +170,15 @@ void do_segment2()
 {
     if (ps2x.Button(PSB_L1))
     {
-        Serial.println("L1 pressed");
-        write_angle(servo_segment2, cur_segment2_angle + inc_angle, cur_segment2_angle);
+        byte angle = constrain(cur_segment2_angle + inc_angle, 0, 180);
+        write_angle(servo_segment2, angle, cur_segment2_angle);
+        Serial.printf("angle: %d\n", angle);
     }
     else if(ps2x.Button(PSB_R1))
     {
-        Serial.println("R1 pressed");
-        write_angle(servo_segment2, cur_segment2_angle - inc_angle, cur_segment2_angle);
+        byte angle = constrain(cur_segment2_angle - inc_angle, 0, 180);
+        write_angle(servo_segment2, angle, cur_segment2_angle);
+        Serial.printf("angle: %d\n", angle);
     }
     else
     {
@@ -177,13 +192,15 @@ void do_grab()
 {
     if (ps2x.Button(PSB_L2))
     {
-        Serial.println("L2 pressed");
-        write_angle(servo_grab, cur_grab_angle - inc_angle, cur_grab_angle);
+        byte angle = constrain(cur_grab_angle - inc_angle, 0, 180);
+        write_angle(servo_grab, angle, cur_grab_angle);
+        Serial.printf("angle: %d\n", angle);
     }
     else if(ps2x.Button(PSB_R2))
     {
-        Serial.println("R2 pressed");
-        write_angle(servo_grab, cur_grab_angle + inc_angle, cur_grab_angle);
+        byte angle = constrain(cur_grab_angle + inc_angle, 0, 180);
+        write_angle(servo_grab, angle, cur_grab_angle);
+        Serial.printf("angle: %d\n", angle);
     }
     else
     {
@@ -202,6 +219,8 @@ void stop_all_motors()
     servo_segment2.write(90);
     servo_grab.write(90);
 
+    cur_drive_angle_l = 90;
+    cur_drive_angle_r = 90;
     cur_tower_angle_x = 90;
     cur_tower_angle_y = 90;
     cur_segment2_angle = 90;
@@ -224,7 +243,7 @@ void setup(){
 
 void loop(){
     static uint32_t tmr;
-    if (millis() - tmr >= 100)
+    if (millis() - tmr >= 150)
     {
         tmr = millis();
         if (ps2x.read_gamepad(false, 0))
