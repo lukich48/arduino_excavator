@@ -3,12 +3,12 @@
 #include <ServoMotorHelper.h>
 #include <PS2X_lib.h>
 
-#define PIN_L_SERVO 12
-#define PIN_R_SERVO 14
+#define PIN_L_SERVO 32
+#define PIN_R_SERVO 33
 #define PIN_TOWER_X_SERVO 27 // башня
 #define PIN_TOWER_Y_SERVO 26 //первое плечо
 #define PIN_SEGMENT2_SERVO 25 // второе плечо
-#define PIN_GRAB_SERVO 33 // ковш
+#define PIN_GRAB_SERVO 14 // ковш
 
 
 #define PS2_DAT        19  //MISO
@@ -124,9 +124,6 @@ void do_drive()
 
     byte angle_l = motor_helper_l.get_angle(speed_l);
     byte angle_r = motor_helper_r.get_angle(speed_r);
-
-    servo_l.write(angle_l);
-    servo_r.write(angle_r);
 
     byte _angle_l = (angle_l > cur_drive_angle_l) ? _min(cur_drive_angle_l + inc_angle, angle_l) : _max(cur_drive_angle_l - inc_angle, angle_l);
     byte _angle_r = (angle_r > cur_drive_angle_r) ? _min(cur_drive_angle_r + inc_angle, angle_r) : _max(cur_drive_angle_r - inc_angle, angle_r);

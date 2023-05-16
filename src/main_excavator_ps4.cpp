@@ -7,6 +7,7 @@
 #include "esp_bt_device.h"
 #include "esp_gap_bt_api.h"
 #include "esp_err.h"
+#include "BLEDevice.h"
 
 #define PIN_L_SERVO 32
 #define PIN_R_SERVO 33
@@ -15,8 +16,10 @@
 #define PIN_SEGMENT2_SERVO 25 // второе плечо
 #define PIN_GRAB_SERVO 14 // ковш
 
+uint8_t new_mac[] = {0x7c, 0x9e, 0xbd, 0xfa, 0x0b, 0xac};
+
 // если поворачивает в другую сторону
-bool invert_x = false;
+bool invert_x = true;
 
 Servo servo_l;
 Servo servo_r;
@@ -36,6 +39,13 @@ int cur_grab_angle = 90;
 
 ServoMotorHelper motor_helper_l(72, 51, 111, 132);
 ServoMotorHelper motor_helper_r(111, 132, 72, 51);
+
+void change_mac()
+{
+  if (BLEDevice::getInitialized()) BLEDevice::deinit(true);
+  esp_base_mac_addr_set(new_mac);
+  BLEDevice::init("ESP32");
+}
 
 // original code https://github.com/un0038998/PS4Controller_ESP32/blob/main/Remove_Paired_Devices/Remove_Paired_Devices.ino
 void removePairedDevices(){
@@ -201,6 +211,8 @@ void stop_all_motors()
 
 void setup(){
     Serial.begin(115200);
+
+    change_mac();
 
     servo_l.attach(PIN_L_SERVO);
     servo_r.attach(PIN_R_SERVO);
