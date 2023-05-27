@@ -74,10 +74,7 @@ void connect_ps4_controller()
 
 void static write_angle(Servo& servo, int angle, int& cur_angle)
 {
-    if (angle > 90)
-        servo.write(constrain(angle, 90, 180));
-    else
-        servo.write(constrain(angle, 0, 90));
+    servo.write(constrain(angle, 0, 180));
 
     // Serial.printf("angle: %d cur_angle: %d\n", angle, cur_angle);
     cur_angle = constrain(angle, 0, 180);
