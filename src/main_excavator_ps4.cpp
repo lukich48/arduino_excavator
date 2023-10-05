@@ -11,9 +11,9 @@
 
 #define PIN_L_SERVO 32
 #define PIN_R_SERVO 33
-#define PIN_TOWER_X_SERVO 27 // башня
-#define PIN_TOWER_Y_SERVO 26 //первое плечо
-#define PIN_SEGMENT2_SERVO 25 // второе плечо
+#define PIN_TOWER_SERVO 27 // башня
+#define PIN_ARM_SERVO 26 //первое плечо
+#define PIN_FOREARM_SERVO 25 // второе плечо
 #define PIN_GRAB_SERVO 14 // ковш
 
 uint8_t new_mac[] = {0x7c, 0x9e, 0xbd, 0xfa, 0x0b, 0xac};
@@ -23,22 +23,22 @@ bool invert_x = true;
 
 Servo servo_l;
 Servo servo_r;
-Servo servo_tower_x;
-Servo servo_tower_y;
-Servo servo_segment2;
+Servo servo_tower;
+Servo servo_arm;
+Servo servo_forearm;
 Servo servo_grab;
 
 byte inc_angle = 30;
 
 int cur_drive_angle_l = 90;
 int cur_drive_angle_r = 90;
-int cur_tower_angle_x = 90;
-int cur_tower_angle_y = 90;
-int cur_segment2_angle = 90;
+int cur_tower_angle = 90;
+int cur_arm_angle = 90;
+int cur_forearm_angle = 90;
 int cur_grab_angle = 90;
 
-ServoMotorHelper motor_helper_l(72, 51, 111, 132);
-ServoMotorHelper motor_helper_r(111, 132, 72, 51);
+ServoMotorHelper motor_helper_l(72, 0, 111, 180);
+ServoMotorHelper motor_helper_r(111, 180, 72, 0);
 
 void change_mac()
 {
@@ -116,7 +116,7 @@ void do_drive()
     // Serial.printf("_angle_l: %d, _angle_r: %d\n", _angle_l, _angle_r);
 }
 
-void do_tower()
+void do_complex()
 {
     byte RY = PS4.RStickY();
     byte RX = PS4.RStickX();
@@ -124,58 +124,102 @@ void do_tower()
     // Serial.printf("LY: %d, LX: %d\n", RY, RX);
     if (RY == 128 && RX == 128)
     {
-        servo_tower_y.write(90);
-        servo_tower_x.write(90);
+        servo_arm.write(90);
+        servo_forearm.write(90);
 
-        cur_tower_angle_y = 90;
-        cur_tower_angle_x = 90;
+        cur_arm_angle = 90;
+        cur_forearm_angle = 90;
 
         return;
     }
 
     byte y = map(RY, 0, 255, 180, 0); // прямое управление
-    byte x = map(RX, 0, 255, 180, 0);
+    byte x = map(RX, 0, 255, 0, 180);
 
-    byte _y = (y > cur_tower_angle_y) ? _min(cur_tower_angle_y + inc_angle, y) : _max(cur_tower_angle_y - inc_angle, y);
-    byte _x = (x > cur_tower_angle_x) ? _min(cur_tower_angle_x + inc_angle, x) : _max(cur_tower_angle_x - inc_angle, x);
+    byte _y = (y > cur_arm_angle) ? _min(cur_arm_angle + inc_angle, y) : _max(cur_arm_angle - inc_angle, y);
+    byte _x = (x > cur_forearm_angle) ? _min(cur_forearm_angle + inc_angle, x) : _max(cur_forearm_angle - inc_angle, x);
 
-    write_angle(servo_tower_y, _y, cur_tower_angle_y);
-    write_angle(servo_tower_x, _x, cur_tower_angle_x);
+    write_angle(servo_arm, _y, cur_arm_angle);
+    write_angle(servo_forearm, _x, cur_tower_angle);
 
     Serial.printf("_y: %d, _x: %d\n", _y, _x);
 }
 
-void do_segment2()
+void do_tower()
 {
-    if (PS4.L1())
+    if (PS4.Left() || PS4.UpLeft() || PS4.DownLeft())
     {
-        byte angle = constrain(cur_segment2_angle + inc_angle, 0, 180);
-        write_angle(servo_segment2, angle, cur_segment2_angle);
+        byte angle = constrain(cur_tower_angle + inc_angle, 0, 180);
+        write_angle(servo_tower, angle, cur_tower_angle);
         Serial.printf("angle: %d\n", angle);
     }
-    else if(PS4.R1())
+    else if (PS4.Right() || PS4.UpRight() || PS4.DownRight())
     {
-        byte angle = constrain(cur_segment2_angle - inc_angle, 0, 180);
-        write_angle(servo_segment2, angle, cur_segment2_angle);
+        byte angle = constrain(cur_tower_angle - inc_angle, 0, 180);
+        write_angle(servo_tower, angle, cur_tower_angle);
         Serial.printf("angle: %d\n", angle);
     }
     else
     {
-        servo_segment2.write(90);
-        cur_segment2_angle = 90;
+        servo_tower.write(90);
+        cur_tower_angle = 90;
+        return;
+    }
+}
+
+void do_arm()
+{
+    if (PS4.Up() || PS4.UpLeft() || PS4.UpRight() || PS4.Triangle())
+    {
+        byte angle = constrain(cur_arm_angle + inc_angle, 0, 180);
+        write_angle(servo_arm, angle, cur_arm_angle);
+        Serial.printf("angle: %d\n", angle);
+    }
+    else if(PS4.Down() || PS4.DownLeft() || PS4.DownRight() || PS4.Cross())
+    {
+        byte angle = constrain(cur_arm_angle - inc_angle, 0, 180);
+        write_angle(servo_arm, angle, cur_arm_angle);
+        Serial.printf("angle: %d\n", angle);
+    }
+    else
+    {
+        servo_arm.write(90);
+        cur_arm_angle = 90;
+        return;
+    }
+}
+
+void do_forearm()
+{
+    if (PS4.L1() || PS4.Square())
+    {
+        byte angle = constrain(cur_forearm_angle + inc_angle, 0, 180);
+        write_angle(servo_forearm, angle, cur_forearm_angle);
+        Serial.printf("angle: %d\n", angle);
+    }
+    else if(PS4.R1() || PS4.Circle())
+    {
+        byte angle = constrain(cur_forearm_angle - inc_angle, 0, 180);
+        write_angle(servo_forearm, angle, cur_forearm_angle);
+        Serial.printf("angle: %d\n", angle);
+    }
+    else
+    {
+        servo_forearm.write(90);
+        cur_forearm_angle = 90;
         return;
     }
 }
 
 void do_grab()
 {
-    if (PS4.L2()) //todo: use byte value
+    if (PS4.R2() || PS4.Circle()) //todo: use byte value
     {
         byte angle = constrain(cur_grab_angle - inc_angle, 0, 180);
         write_angle(servo_grab, angle, cur_grab_angle);
         Serial.printf("angle: %d\n", angle);
     }
-    else if(PS4.R2())
+    else if(PS4.L2() || PS4.Square())
     {
         byte angle = constrain(cur_grab_angle + inc_angle, 0, 180);
         write_angle(servo_grab, angle, cur_grab_angle);
@@ -193,16 +237,16 @@ void stop_all_motors()
 {
     servo_l.write(90);
     servo_r.write(90);
-    servo_tower_y.write(90);
-    servo_tower_x.write(90);
-    servo_segment2.write(90);
+    servo_arm.write(90);
+    servo_tower.write(90);
+    servo_forearm.write(90);
     servo_grab.write(90);
 
     cur_drive_angle_l = 90;
     cur_drive_angle_r = 90;
-    cur_tower_angle_x = 90;
-    cur_tower_angle_y = 90;
-    cur_segment2_angle = 90;
+    cur_tower_angle = 90;
+    cur_arm_angle = 90;
+    cur_forearm_angle = 90;
     cur_grab_angle = 90;
 }
 
@@ -213,9 +257,9 @@ void setup(){
 
     servo_l.attach(PIN_L_SERVO);
     servo_r.attach(PIN_R_SERVO);
-    servo_tower_y.attach(PIN_TOWER_Y_SERVO);
-    servo_tower_x.attach(PIN_TOWER_X_SERVO);
-    servo_segment2.attach(PIN_SEGMENT2_SERVO);
+    servo_arm.attach(PIN_ARM_SERVO);
+    servo_tower.attach(PIN_TOWER_SERVO);
+    servo_forearm.attach(PIN_FOREARM_SERVO);
     servo_grab.attach(PIN_GRAB_SERVO);
 
     connect_ps4_controller();
@@ -230,8 +274,10 @@ void loop(){
         {
             do_drive();
             do_tower();
-            do_segment2();
+            // do_arm();
+            // do_forearm();
             do_grab();
+            do_complex();
         }
         else
         {
