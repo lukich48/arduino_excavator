@@ -167,59 +167,15 @@ void do_tower()
     }
 }
 
-void do_arm()
-{
-    if (PS4.Up() || PS4.UpLeft() || PS4.UpRight() || PS4.Triangle())
-    {
-        byte angle = constrain(cur_arm_angle + inc_angle, 0, 180);
-        write_angle(servo_arm, angle, cur_arm_angle);
-        Serial.printf("angle: %d\n", angle);
-    }
-    else if(PS4.Down() || PS4.DownLeft() || PS4.DownRight() || PS4.Cross())
-    {
-        byte angle = constrain(cur_arm_angle - inc_angle, 0, 180);
-        write_angle(servo_arm, angle, cur_arm_angle);
-        Serial.printf("angle: %d\n", angle);
-    }
-    else
-    {
-        servo_arm.write(90);
-        cur_arm_angle = 90;
-        return;
-    }
-}
-
-void do_forearm()
-{
-    if (PS4.L1() || PS4.Square())
-    {
-        byte angle = constrain(cur_forearm_angle + inc_angle, 0, 180);
-        write_angle(servo_forearm, angle, cur_forearm_angle);
-        Serial.printf("angle: %d\n", angle);
-    }
-    else if(PS4.R1() || PS4.Circle())
-    {
-        byte angle = constrain(cur_forearm_angle - inc_angle, 0, 180);
-        write_angle(servo_forearm, angle, cur_forearm_angle);
-        Serial.printf("angle: %d\n", angle);
-    }
-    else
-    {
-        servo_forearm.write(90);
-        cur_forearm_angle = 90;
-        return;
-    }
-}
-
 void do_grab()
 {
-    if (PS4.R2() || PS4.Circle()) //todo: use byte value
+    if (PS4.R2() || PS4.Up()) //todo: use byte value
     {
         byte angle = constrain(cur_grab_angle - inc_angle, 0, 180);
         write_angle(servo_grab, angle, cur_grab_angle);
         Serial.printf("angle: %d\n", angle);
     }
-    else if(PS4.L2() || PS4.Square())
+    else if(PS4.L2() || PS4.Down())
     {
         byte angle = constrain(cur_grab_angle + inc_angle, 0, 180);
         write_angle(servo_grab, angle, cur_grab_angle);
