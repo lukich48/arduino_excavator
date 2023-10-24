@@ -116,33 +116,33 @@ void do_drive()
     // Serial.printf("_angle_l: %d, _angle_r: %d\n", _angle_l, _angle_r);
 }
 
-void do_complex()
+void do_arm()
 {
     byte RY = PS4.RStickY();
     byte RX = PS4.RStickX();
 
     // Serial.printf("LY: %d, LX: %d\n", RY, RX);
-    if (RY == 128 && RX == 128)
+    if (RY == 128)
     {
-        servo_arm.write(90);
-        servo_forearm.write(90);
-
-        cur_arm_angle = 90;
-        cur_forearm_angle = 90;
-
-        return;
+        write_angle(servo_arm, 90, cur_arm_angle);
+    }
+    else
+    {
+        byte y = map(RY, 0, 255, 180, 0);
+        byte _y = (y > cur_arm_angle) ? _min(cur_arm_angle + inc_angle, y) : _max(cur_arm_angle - inc_angle, y);
+        write_angle(servo_arm, _y, cur_arm_angle);
     }
 
-    byte y = map(RY, 0, 255, 180, 0); // прямое управление
-    byte x = map(RX, 0, 255, 0, 180);
-
-    byte _y = (y > cur_arm_angle) ? _min(cur_arm_angle + inc_angle, y) : _max(cur_arm_angle - inc_angle, y);
-    byte _x = (x > cur_forearm_angle) ? _min(cur_forearm_angle + inc_angle, x) : _max(cur_forearm_angle - inc_angle, x);
-
-    write_angle(servo_arm, _y, cur_arm_angle);
-    write_angle(servo_forearm, _x, cur_tower_angle);
-
-    Serial.printf("_y: %d, _x: %d\n", _y, _x);
+    if (RX == 128)
+    {
+        write_angle(servo_forearm, 90, cur_forearm_angle);
+    }
+    else
+    {
+        byte x = map(RX, 0, 255, 180, 0);
+        byte _x = (x > cur_forearm_angle) ? _min(cur_forearm_angle + inc_angle, x) : _max(cur_forearm_angle - inc_angle, x);
+        write_angle(servo_forearm, _x, cur_forearm_angle);
+    }
 }
 
 void do_tower()
@@ -161,21 +161,20 @@ void do_tower()
     }
     else
     {
-        servo_tower.write(90);
-        cur_tower_angle = 90;
+        write_angle(servo_tower, 90, cur_tower_angle);
         return;
     }
 }
 
 void do_grab()
 {
-    if (PS4.R2() || PS4.Up()) //todo: use byte value
+    if (PS4.L2() || PS4.Up() || PS4.UpLeft() || PS4.UpRight()) //todo: use byte value
     {
         byte angle = constrain(cur_grab_angle - inc_angle, 0, 180);
         write_angle(servo_grab, angle, cur_grab_angle);
         Serial.printf("angle: %d\n", angle);
     }
-    else if(PS4.L2() || PS4.Down())
+    else if(PS4.R2() || PS4.Down() || PS4.DownLeft() || PS4.DownRight())
     {
         byte angle = constrain(cur_grab_angle + inc_angle, 0, 180);
         write_angle(servo_grab, angle, cur_grab_angle);
@@ -230,14 +229,11 @@ void loop(){
         {
             do_drive();
             do_tower();
-            // do_arm();
-            // do_forearm();
+            do_arm();
             do_grab();
-            do_complex();
         }
         else
         {
-            // Serial.println("false");
             stop_all_motors();
         }
     }
