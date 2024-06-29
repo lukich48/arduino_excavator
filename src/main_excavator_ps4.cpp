@@ -122,24 +122,24 @@ void do_arm()
     byte RX = PS4.RStickX();
 
     // Serial.printf("LY: %d, LX: %d\n", RY, RX);
-    if (RY == 128)
+    if (RY == 128 && !(PS4.R2() || PS4.L2()))
     {
         write_angle(servo_arm, 90, cur_arm_angle);
     }
     else
     {
-        byte y = map(RY, 0, 255, 180, 0);
+        byte y = PS4.R2() ? 180 : PS4.L2() ? 0 : map(RY, 0, 255, 180, 0);
         byte _y = (y > cur_arm_angle) ? _min(cur_arm_angle + inc_angle, y) : _max(cur_arm_angle - inc_angle, y);
         write_angle(servo_arm, _y, cur_arm_angle);
     }
 
-    if (RX == 128)
+    if (RX == 128 && !(PS4.R1() || PS4.L1()))
     {
         write_angle(servo_forearm, 90, cur_forearm_angle);
     }
     else
     {
-        byte x = map(RX, 0, 255, 180, 0);
+        byte x = PS4.R1() ? 0 : PS4.L1() ? 180 : map(RX, 0, 255, 180, 0);
         byte _x = (x > cur_forearm_angle) ? _min(cur_forearm_angle + inc_angle, x) : _max(cur_forearm_angle - inc_angle, x);
         write_angle(servo_forearm, _x, cur_forearm_angle);
     }
@@ -147,13 +147,13 @@ void do_arm()
 
 void do_tower()
 {
-    if (PS4.Left() || PS4.UpLeft() || PS4.DownLeft())
+    if (PS4.Left() || PS4.UpLeft() || PS4.DownLeft() || PS4.Square())
     {
         byte angle = constrain(cur_tower_angle + inc_angle, 0, 180);
         write_angle(servo_tower, angle, cur_tower_angle);
         Serial.printf("angle: %d\n", angle);
     }
-    else if (PS4.Right() || PS4.UpRight() || PS4.DownRight())
+    else if (PS4.Right() || PS4.UpRight() || PS4.DownRight() || PS4.Circle())
     {
         byte angle = constrain(cur_tower_angle - inc_angle, 0, 180);
         write_angle(servo_tower, angle, cur_tower_angle);
@@ -168,13 +168,13 @@ void do_tower()
 
 void do_grab()
 {
-    if (PS4.L2() || PS4.Up() || PS4.UpLeft() || PS4.UpRight()) //todo: use byte value
+    if (PS4.Up() || PS4.UpLeft() || PS4.UpRight() || PS4.Triangle())
     {
         byte angle = constrain(cur_grab_angle - inc_angle, 0, 180);
         write_angle(servo_grab, angle, cur_grab_angle);
         Serial.printf("angle: %d\n", angle);
     }
-    else if(PS4.R2() || PS4.Down() || PS4.DownLeft() || PS4.DownRight())
+    else if (PS4.Down() || PS4.DownLeft() || PS4.DownRight() || PS4.Cross())
     {
         byte angle = constrain(cur_grab_angle + inc_angle, 0, 180);
         write_angle(servo_grab, angle, cur_grab_angle);
